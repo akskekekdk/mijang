@@ -13,6 +13,7 @@ import androidx.work.WorkManager
 class MainActivity : ComponentActivity() {
     private lateinit var status: TextView
     private lateinit var list: TextView
+    private lateinit var info: TextView
 
     private val askNotification =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -24,8 +25,9 @@ class MainActivity : ComponentActivity() {
         setContentView(R.layout.activity_main)
         status = findViewById(R.id.status)
         list = findViewById(R.id.list)
+        info = findViewById(R.id.info)
         findViewById<Button>(R.id.refresh).setOnClickListener {
-            UpdateWorker.runNow(this, forceRank = true)
+            UpdateWorker.runNow(this, forceFetch = true)
         }
 
         if (Build.VERSION.SDK_INT >= 33) askNotification.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -36,7 +38,7 @@ class MainActivity : ComponentActivity() {
                 render(running)
             }
 
-        if (Store.load(this) == null) UpdateWorker.runNow(this, forceRank = true)
+        if (Store.load(this) == null) UpdateWorker.runNow(this, forceFetch = true)
     }
 
     override fun onResume() {
@@ -46,12 +48,16 @@ class MainActivity : ComponentActivity() {
 
     private fun render(loading: Boolean) {
         val snapshot = Store.load(this)
-        list.text = snapshot?.let { Format.lines(this, it.stocks, withReturn = true) }
+        list.text = snapshot?.let { Format.lines(this, it.stocks, withProb = true) }
             ?: getString(R.string.empty)
         status.text = when {
             loading -> getString(R.string.loading)
             snapshot != null -> Format.asOf(snapshot.quotedAt) + " · 1시간마다 자동 갱신"
             else -> ""
         }
+        info.text = snapshot?.let {
+            "${it.prediction.asOf} 종가까지 학습 · 확률 = 향후 3개월 SPY를 이길 확률(모델 추정)\n" +
+                "${it.prediction.backtest}\n" + getString(R.string.disclaimer)
+        } ?: ""
     }
 }

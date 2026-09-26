@@ -28,9 +28,9 @@ object Format {
 
     /**
      * "1. 엔비디아  $225.07 +0.22%" 형태의 줄들. [firstRank] 는 첫 줄 순위 번호,
-     * [withReturn] 이면 5년 수익률도 붙인다.
+     * [withProb] 이면 모델이 추정한 SPY 초과 확률도 붙인다.
      */
-    fun lines(context: Context, stocks: List<Stock>, firstRank: Int = 1, withReturn: Boolean = false): CharSequence {
+    fun lines(context: Context, stocks: List<Stock>, firstRank: Int = 1, withProb: Boolean = false): CharSequence {
         val sb = SpannableStringBuilder()
         stocks.forEachIndexed { i, s ->
             if (i > 0) sb.append('\n')
@@ -38,9 +38,9 @@ object Format {
             val start = sb.length
             sb.append(percent(s.change))
             sb.setSpan(ForegroundColorSpan(color(context, s.change)), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            if (withReturn) {
+            if (withProb) {
                 val subStart = sb.length
-                sb.append("   5년 ${percent(s.return5y, sign = false)}")
+                sb.append("   확률 ${percent(s.prob, sign = false)}")
                 sb.setSpan(ForegroundColorSpan(context.getColor(R.color.sub)), subStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
         }

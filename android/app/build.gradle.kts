@@ -34,8 +34,6 @@ android {
         }
     }
 
-    sourceSets["main"].assets.srcDir("../../data")
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

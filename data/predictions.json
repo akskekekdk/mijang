@@ -1,0 +1,434 @@
+{
+  "generated_at": "2026-09-26T03:45:41+00:00",
+  "as_of": "2026-09-25",
+  "horizon_days": 63,
+  "target": "향후 3개월 수익률이 SPY보다 높을 확률",
+  "features": [
+    "total_return",
+    "cagr",
+    "volatility",
+    "sharpe",
+    "sortino",
+    "mdd",
+    "calmar",
+    "beta",
+    "alpha",
+    "win_rate",
+    "mom_1m",
+    "mom_3m",
+    "from_high"
+  ],
+  "train_rows": 17104,
+  "backtest": {
+    "period": "2020-01 ~ 2026-05",
+    "rebalances": 77,
+    "auc": 0.5311649353239558,
+    "top_avg_excess_3m": 0.05705805871370561,
+    "universe_avg_excess_3m": 0.008222335531573886,
+    "top_hit_rate": 0.5240259740259741,
+    "universe_hit_rate": 0.4763999057566952,
+    "months_top_beat_universe": 0.6233766233766234
+  },
+  "stocks": [
+    {
+      "ticker": "ARM",
+      "name": "ARM",
+      "prob": 0.5745,
+      "indicators": {
+        "total_return": 1.1505,
+        "cagr": 1.1471,
+        "volatility": 0.7909,
+        "sharpe": 1.3533,
+        "sortino": 2.3044,
+        "mdd": -0.4883,
+        "calmar": 2.3495,
+        "beta": 3.4574,
+        "alpha": 0.4707,
+        "win_rate": 0.5198,
+        "mom_1m": 0.236,
+        "mom_3m": -0.0716,
+        "from_high": -0.2939
+      }
+    },
+    {
+      "ticker": "MRVL",
+      "name": "마벨테크놀로지",
+      "prob": 0.5729,
+      "indicators": {
+        "total_return": 2.2775,
+        "cagr": 2.2696,
+        "volatility": 0.7916,
+        "sharpe": 1.8852,
+        "sortino": 3.1918,
+        "mdd": -0.4835,
+        "calmar": 4.6942,
+        "beta": 3.0255,
+        "alpha": 0.9678,
+        "win_rate": 0.5317,
+        "mom_1m": 0.0687,
+        "mom_3m": -0.0179,
+        "from_high": -0.172
+      }
+    },
+    {
+      "ticker": "INTC",
+      "name": "인텔",
+      "prob": 0.5672,
+      "indicators": {
+        "total_return": 2.9398,
+        "cagr": 2.9287,
+        "volatility": 0.7753,
+        "sharpe": 2.1515,
+        "sortino": 3.7287,
+        "mdd": -0.419,
+        "calmar": 6.9891,
+        "beta": 2.9193,
+        "alpha": 1.1619,
+        "win_rate": 0.5198,
+        "mom_1m": 0.3939,
+        "mom_3m": -0.0415,
+        "from_high": -0.1273
+      }
+    },
+    {
+      "ticker": "MSTR",
+      "name": "스트래티지",
+      "prob": 0.5605,
+      "indicators": {
+        "total_return": -0.5094,
+        "cagr": -0.5087,
+        "volatility": 0.8214,
+        "sharpe": -0.4651,
+        "sortino": -0.7056,
+        "mdd": -0.7712,
+        "calmar": -0.6597,
+        "beta": 3.1494,
+        "alpha": -0.9282,
+        "win_rate": 0.4444,
+        "mom_1m": 0.2875,
+        "mom_3m": 0.927,
+        "from_high": -0.559
+      }
+    },
+    {
+      "ticker": "APP",
+      "name": "앱러빈",
+      "prob": 0.5592,
+      "indicators": {
+        "total_return": -0.5159,
+        "cagr": -0.5152,
+        "volatility": 0.7361,
+        "sharpe": -0.6048,
+        "sortino": -0.7775,
+        "mdd": -0.593,
+        "calmar": -0.8688,
+        "beta": 2.1335,
+        "alpha": -0.8152,
+        "win_rate": 0.4722,
+        "mom_1m": 0.0086,
+        "mom_3m": -0.3486,
+        "from_high": -0.5764
+      }
+    },
+    {
+      "ticker": "DDOG",
+      "name": "데이터독",
+      "prob": 0.5564,
+      "indicators": {
+        "total_return": 0.9633,
+        "cagr": 0.9606,
+        "volatility": 0.6998,
+        "sharpe": 1.2997,
+        "sortino": 2.2751,
+        "mdd": -0.4862,
+        "calmar": 1.9757,
+        "beta": 1.179,
+        "alpha": 0.7051,
+        "win_rate": 0.4802,
+        "mom_1m": 0.1777,
+        "mom_3m": 0.1183,
+        "from_high": -0.0695
+      }
+    },
+    {
+      "ticker": "MU",
+      "name": "마이크론",
+      "prob": 0.5546,
+      "indicators": {
+        "total_return": 5.7035,
+        "cagr": 5.6774,
+        "volatility": 0.8146,
+        "sharpe": 2.7443,
+        "sortino": 4.6651,
+        "mdd": -0.391,
+        "calmar": 14.5219,
+        "beta": 3.3328,
+        "alpha": 1.6575,
+        "win_rate": 0.5476,
+        "mom_1m": 0.1533,
+        "mom_3m": -0.0441,
+        "from_high": -0.108
+      }
+    },
+    {
+      "ticker": "TEAM",
+      "name": "아틀라시안",
+      "prob": 0.5528,
+      "indicators": {
+        "total_return": 0.1459,
+        "cagr": 0.1456,
+        "volatility": 0.7816,
+        "sharpe": 0.539,
+        "sortino": 0.9664,
+        "mdd": -0.6754,
+        "calmar": 0.2156,
+        "beta": 0.7505,
+        "alpha": 0.2911,
+        "win_rate": 0.4802,
+        "mom_1m": 0.1144,
+        "mom_3m": 1.3843,
+        "from_high": -0.0405
+      }
+    },
+    {
+      "ticker": "AMD",
+      "name": "AMD",
+      "prob": 0.5494,
+      "indicators": {
+        "total_return": 2.9199,
+        "cagr": 2.9089,
+        "volatility": 0.7273,
+        "sharpe": 2.2374,
+        "sortino": 3.9051,
+        "mdd": -0.2776,
+        "calmar": 10.4785,
+        "beta": 3.1924,
+        "alpha": 1.0737,
+        "win_rate": 0.5556,
+        "mom_1m": 0.3113,
+        "mom_3m": 0.2091,
+        "from_high": 0.0
+      }
+    },
+    {
+      "ticker": "AMAT",
+      "name": "어플라이드머티리얼즈",
+      "prob": 0.5462,
+      "indicators": {
+        "total_return": 1.421,
+        "cagr": 1.4166,
+        "volatility": 0.5978,
+        "sharpe": 1.7774,
+        "sortino": 2.7753,
+        "mdd": -0.4249,
+        "calmar": 3.3343,
+        "beta": 2.7115,
+        "alpha": 0.5924,
+        "win_rate": 0.5714,
+        "mom_1m": 0.0109,
+        "mom_3m": -0.2255,
+        "from_high": -0.3285
+      }
+    },
+    {
+      "ticker": "LRCX",
+      "name": "램리서치",
+      "prob": 0.5462,
+      "indicators": {
+        "total_return": 1.4678,
+        "cagr": 1.4632,
+        "volatility": 0.6482,
+        "sharpe": 1.717,
+        "sortino": 2.6684,
+        "mdd": -0.4176,
+        "calmar": 3.5035,
+        "beta": 3.2267,
+        "alpha": 0.5535,
+        "win_rate": 0.5437,
+        "mom_1m": 0.0085,
+        "mom_3m": -0.1676,
+        "from_high": -0.2718
+      }
+    },
+    {
+      "ticker": "GFS",
+      "name": "글로벌파운드리스",
+      "prob": 0.5442,
+      "indicators": {
+        "total_return": 0.484,
+        "cagr": 0.4828,
+        "volatility": 0.6064,
+        "sharpe": 0.9507,
+        "sortino": 1.4696,
+        "mdd": -0.5241,
+        "calmar": 0.9211,
+        "beta": 2.2596,
+        "alpha": 0.1847,
+        "win_rate": 0.5198,
+        "mom_1m": 0.0756,
+        "mom_3m": -0.3843,
+        "from_high": -0.4532
+      }
+    },
+    {
+      "ticker": "ON",
+      "name": "온세미",
+      "prob": 0.5442,
+      "indicators": {
+        "total_return": 0.5155,
+        "cagr": 0.5142,
+        "volatility": 0.6324,
+        "sharpe": 0.9794,
+        "sortino": 1.4112,
+        "mdd": -0.5027,
+        "calmar": 1.0229,
+        "beta": 2.6587,
+        "alpha": 0.1584,
+        "win_rate": 0.5159,
+        "mom_1m": 0.0544,
+        "mom_3m": -0.1484,
+        "from_high": -0.4236
+      }
+    },
+    {
+      "ticker": "CAT",
+      "name": "캐터필러",
+      "prob": 0.5431,
+      "indicators": {
+        "total_return": 0.7646,
+        "cagr": 0.7625,
+        "volatility": 0.398,
+        "sharpe": 1.625,
+        "sortino": 2.5846,
+        "mdd": -0.267,
+        "calmar": 2.8562,
+        "beta": 1.7331,
+        "alpha": 0.3463,
+        "win_rate": 0.5516,
+        "mom_1m": -0.0004,
+        "mom_3m": -0.1748,
+        "from_high": -0.2271
+      }
+    },
+    {
+      "ticker": "F",
+      "name": "포드",
+      "prob": 0.5395,
+      "indicators": {
+        "total_return": 0.1438,
+        "cagr": 0.1435,
+        "volatility": 0.3893,
+        "sharpe": 0.5355,
+        "sortino": 0.8892,
+        "mdd": -0.2697,
+        "calmar": 0.5321,
+        "beta": 1.1736,
+        "alpha": 0.005,
+        "win_rate": 0.4722,
+        "mom_1m": -0.0856,
+        "mom_3m": -0.0908,
+        "from_high": -0.2633
+      }
+    },
+    {
+      "ticker": "TXN",
+      "name": "텍사스인스트루먼트",
+      "prob": 0.5395,
+      "indicators": {
+        "total_return": 0.5467,
+        "cagr": 0.5453,
+        "volatility": 0.4252,
+        "sharpe": 1.2329,
+        "sortino": 2.1209,
+        "mdd": -0.2337,
+        "calmar": 2.3337,
+        "beta": 1.4684,
+        "alpha": 0.2696,
+        "win_rate": 0.5119,
+        "mom_1m": 0.0623,
+        "mom_3m": -0.0208,
+        "from_high": -0.1589
+      }
+    },
+    {
+      "ticker": "KLAC",
+      "name": "KLA",
+      "prob": 0.5386,
+      "indicators": {
+        "total_return": 0.7679,
+        "cagr": 0.7659,
+        "volatility": 0.6053,
+        "sharpe": 1.246,
+        "sortino": 1.8185,
+        "mdd": -0.4447,
+        "calmar": 1.7223,
+        "beta": 2.7934,
+        "alpha": 0.2699,
+        "win_rate": 0.5595,
+        "mom_1m": 0.0222,
+        "mom_3m": -0.2434,
+        "from_high": -0.3764
+      }
+    },
+    {
+      "ticker": "WDAY",
+      "name": "워크데이",
+      "prob": 0.5343,
+      "indicators": {
+        "total_return": -0.2156,
+        "cagr": -0.2152,
+        "volatility": 0.5401,
+        "sharpe": -0.1844,
+        "sortino": -0.2812,
+        "mdd": -0.5458,
+        "calmar": -0.3942,
+        "beta": 0.3584,
+        "alpha": -0.1617,
+        "win_rate": 0.4802,
+        "mom_1m": -0.0068,
+        "mom_3m": 0.5252,
+        "from_high": -0.2351
+      }
+    },
+    {
+      "ticker": "AXON",
+      "name": "액손",
+      "prob": 0.5342,
+      "indicators": {
+        "total_return": -0.3838,
+        "cagr": -0.3832,
+        "volatility": 0.6224,
+        "sharpe": -0.4676,
+        "sortino": -0.6651,
+        "mdd": -0.5445,
+        "calmar": -0.7038,
+        "beta": 1.5581,
+        "alpha": -0.5612,
+        "win_rate": 0.4881,
+        "mom_1m": -0.292,
+        "mom_3m": -0.0747,
+        "from_high": -0.4336
+      }
+    },
+    {
+      "ticker": "ZS",
+      "name": "지스케일러",
+      "prob": 0.5342,
+      "indicators": {
+        "total_return": -0.3213,
+        "cagr": -0.3207,
+        "volatility": 0.6613,
+        "sharpe": -0.2352,
+        "sortino": -0.3019,
+        "mdd": -0.6489,
+        "calmar": -0.4942,
+        "beta": 0.9591,
+        "alpha": -0.3218,
+        "win_rate": 0.5238,
+        "mom_1m": 0.1335,
+        "mom_3m": 0.4596,
+        "from_high": -0.4259
+      }
+    }
+  ]
+}

@@ -5,8 +5,9 @@
 
 # 구조
 
-- `mijang/` — Python: 10대 수익률 지표(`indicators.py`), 5년 수익률 TOP 20(`top20.py`). 테스트는 `pytest -q`.
-- `data/universe.txt` — 후보 종목(티커 + 한글이름). Python과 안드로이드 앱이 같은 파일을 쓴다.
+- `mijang/` — Python: 10대 수익률 지표(`indicators.py`), 예측 모델(`model.py`), 5년 수익률 TOP 20(`top20.py`). 테스트는 `pytest -q`.
+- `data/predictions.json` — 모델 예측 결과. `predict.yml`이 매일 다시 만들어 main에 커밋하고, 앱이 raw URL로 받아 간다. 형식을 바꾸면 앱 파서(`Model.kt`)도 같이 바꾼다.
+- `data/universe.txt` — 후보 종목(티커 + 한글이름). 모델 학습 대상.
 - `android/` — 안드로이드 앱 "미장". `./gradlew testDebugUnitTest assembleDebug`.
   - main에 푸시하면 GitHub Actions가 APK를 빌드해 Releases의 `latest`에 올린다.
   - 아이콘은 `android/tools/make_icons.py`로 생성 (Noto Sans CJK KR Bold 필요).

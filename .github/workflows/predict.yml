@@ -1,0 +1,36 @@
+name: predict
+
+# 미국장 마감 후(한국시간 오전 7시 30분, 화~토) 모델을 다시 학습하고 예측 결과를 main에 올린다.
+# 앱은 data/predictions.json 을 받아서 알림을 띄운다.
+on:
+  schedule:
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: predict
+  cancel-in-progress: false
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m mijang.model
+      - name: Commit predictions
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/predictions.json
+          git diff --cached --quiet && exit 0
+          git commit -m "예측 갱신 $(date -u +%Y-%m-%d)"
+          git pull --rebase origin main
+          git push origin main

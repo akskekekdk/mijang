@@ -4,7 +4,7 @@ import android.content.Context
 
 object Store {
     private const val PREFS = "mijang"
-    private const val KEY = "snapshot"
+    private const val KEY = "snapshot_v2"
 
     fun load(context: Context): Snapshot? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
@@ -14,15 +14,4 @@ object Store {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putString(KEY, snapshot.toJson()).apply()
     }
-
-    /** assets/universe.txt → {티커: 한글이름} (저장소의 data/universe.txt 와 같은 파일). */
-    fun universe(context: Context): Map<String, String> =
-        context.assets.open("universe.txt").bufferedReader().useLines { lines ->
-            lines.map { it.substringBefore('#').trim() }
-                .filter { it.isNotEmpty() }
-                .associate { line ->
-                    val ticker = line.substringBefore(' ').uppercase()
-                    ticker to line.substringAfter(' ', ticker).trim()
-                }
-        }
 }

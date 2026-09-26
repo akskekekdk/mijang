@@ -1,9 +1,10 @@
 <resources>
     <string name="app_name">미장</string>
     <string name="channel_name">미장 TOP 20</string>
-    <string name="channel_desc">5년 수익률 상위 미국 종목 시세</string>
-    <string name="title">5년 수익률 TOP 20</string>
+    <string name="channel_desc">AI가 예측한 유망 미국 종목 시세</string>
+    <string name="title">AI 예측 TOP 20</string>
     <string name="refresh">새로고침</string>
-    <string name="loading">불러오는 중… (처음엔 1분 정도 걸려요)</string>
+    <string name="loading">불러오는 중…</string>
+    <string name="disclaimer">과거 패턴 기반 참고용 예측이며 수익을 보장하지 않습니다.</string>
     <string name="empty">아직 데이터가 없어요. 새로고침을 눌러주세요.</string>
 </resources>

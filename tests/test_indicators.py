@@ -71,3 +71,26 @@ def test_rank_skips_short_history_and_sorts():
     assert list(result["ticker"]) == ["FAST", "SLOW"]
     assert result.loc[1, "return_5y"] == pytest.approx(3.0)
     assert load_universe()["NVDA"] == "엔비디아"
+
+
+def test_model_learns_planted_signal_without_lookahead():
+    """모멘텀이 강한 종목이 계속 오르도록 만든 가짜 시장에서 학습·예측이 동작하는지."""
+    from mijang import model as m
+
+    rng = np.random.default_rng(3)
+    idx = pd.bdate_range("2015-01-01", "2021-12-31")
+    drifts = np.linspace(-0.0005, 0.0015, 30)
+    rets = rng.normal(drifts, 0.01, size=(len(idx), 30))
+    prices = pd.DataFrame(100 * np.cumprod(1 + rets, axis=0), index=idx,
+                          columns=[f"T{i}" for i in range(30)])
+    bench = pd.Series(100 * np.cumprod(1 + rng.normal(0.0004, 0.008, len(idx))), index=idx)
+
+    result = m.predict(prices, bench, {"T29": "최고"}, top=5)
+    assert len(result["stocks"]) == 5
+    assert result["backtest"]["top_avg_excess_3m"] > result["backtest"]["universe_avg_excess_3m"]
+    # 추세가 강한 절반(T15~T29)에서만 뽑혀야 한다
+    assert {s["ticker"] for s in result["stocks"]} <= {f"T{i}" for i in range(15, 30)}
+    # 최근 데이터(정답 미확정)는 학습에 쓰이지 않았는지
+    data = m.build_dataset(prices, bench)
+    last = data[data["date"] == data["date"].max()]
+    assert last["fwd_excess"].isna().all()
