@@ -3,8 +3,8 @@
 1. 매월 말, 종목마다 직전 1년 가격·거래량으로 지표 23개를 계산한다
    (10대 수익률 지표 + 모멘텀·추세·과열·거래량 기술지표).
 2. 정답: 그 뒤 3개월(63거래일) 동안 S&P 500(SPY)보다 많이 올랐는가.
-3. 예측 방법 15가지(팩터 규칙 7 + 머신러닝 7 + 앙상블)를 연도별 워크포워드로 검증한다
-   (항상 과거로만 학습 → 다음 해 예측).
+3. 예측 방법 15가지(팩터 규칙 7 + 머신러닝 7 + 앙상블)와, 이들을 섞은 혼합 4가지를
+   연도별 워크포워드로 검증한다 (항상 과거로만 학습 → 다음 해 예측).
 4. "선정 기간"의 추천 적중률(추천 종목 중 SPY를 이긴 비율)이 가장 높은 방법을 고르고,
    고를 때 쓰지 않은 최근 "검증 기간" 성적을 따로 보고한다.
 5. 고른 방법으로 오늘 후보 전체에 점수를 매겨 매수추천 20개를 뽑고, 종목마다 근거를 남긴다:
@@ -293,25 +293,62 @@ def evaluate(scored: pd.DataFrame, top: int) -> dict:
     }
 
 
-def compare_methods(data: pd.DataFrame, top: int) -> tuple[Method, list[dict]]:
-    """방법별 성적을 선정 기간/검증 기간으로 나눠 매기고, 선정 기간 적중률 1위를 고른다."""
-    results = []
-    for method in METHODS:
-        scored = walk_forward_scores(data, method)
-        cutoff = pd.Timestamp(year=scored["date"].dt.year.max() - HOLDOUT_YEARS + 1, month=1, day=1)
-        results.append({
-            "key": method.key,
-            "label": method.label,
-            "kind": method.kind,
-            "description": method.description,
-            "selection": evaluate(scored[scored["date"] < cutoff], top),
-            "holdout": evaluate(scored[scored["date"] >= cutoff], top),
-            "overall": evaluate(scored, top),
-        })
-    best = max(results, key=lambda r: (r["selection"]["hit_rate"], r["selection"]["avg_excess_3m"]))
+# 여러 방법 섞기: 구성 방법들의 점수를 날짜별 순위(0~1)로 바꿔 평균한다.
+# (이름, 설명, 구성 방법 고르는 함수: 단일 방법 성적표 → 키 목록)
+MIXES = [
+    ("mix_all", "전체 혼합", lambda singles: [r["key"] for r in singles]),
+    ("mix_ml", "머신러닝 혼합", lambda singles: [r["key"] for r in singles if r["kind"] == "머신러닝"]),
+    ("mix_top3", "상위3 혼합", lambda singles: [r["key"] for r in _by_selection(singles)[:3]]),
+    ("mix_top5", "상위5 혼합", lambda singles: [r["key"] for r in _by_selection(singles)[:5]]),
+]
+
+
+def _by_selection(results: list[dict]) -> list[dict]:
+    return sorted(results, key=lambda r: (r["selection"]["hit_rate"], r["selection"]["avg_excess_3m"]), reverse=True)
+
+
+def _grade(key: str, label: str, kind: str, description: str, scored: pd.DataFrame, top: int, **extra) -> dict:
+    cutoff = pd.Timestamp(year=scored["date"].dt.year.max() - HOLDOUT_YEARS + 1, month=1, day=1)
+    return {
+        "key": key, "label": label, "kind": kind, "description": description, **extra,
+        "selection": evaluate(scored[scored["date"] < cutoff], top),
+        "holdout": evaluate(scored[scored["date"] >= cutoff], top),
+        "overall": evaluate(scored, top),
+    }
+
+
+def compare_methods(data: pd.DataFrame, top: int) -> tuple[dict, list[dict]]:
+    """단일 방법과 혼합 방법의 성적을 선정 기간/검증 기간으로 나눠 매기고, 선정 기간 적중률 1위를 고른다.
+    혼합의 구성(상위 3·5개)도 선정 기간 성적으로만 정하므로 검증 기간은 끝까지 깨끗하게 남는다."""
+    scored = {m.key: walk_forward_scores(data, m) for m in METHODS}
+    results = [_grade(m.key, m.label, m.kind, m.description, scored[m.key], top) for m in METHODS]
+    singles = list(results)
+    labels = {m.key: m.label for m in METHODS}
+    for key, label, pick in MIXES:
+        parts = pick(singles)
+        base = scored[parts[0]]
+        mixed = base.drop(columns="score").copy()
+        mixed["score"] = pd.concat(
+            [scored[k]["score"].groupby(scored[k]["date"]).rank(pct=True) for k in parts], axis=1
+        ).mean(axis=1)
+        desc = "·".join(labels[k] for k in parts) + " 순위 평균"
+        results.append(_grade(key, label, "혼합", desc, mixed, top, components=parts))
+    best = _by_selection(results)[0]
     for r in results:
         r["chosen"] = r is best
-    return next(m for m in METHODS if m.key == best["key"]), results
+    return best, results
+
+
+def build_predictor(chosen: dict, labeled: pd.DataFrame, today: pd.DataFrame) -> Predictor:
+    """고른 방법을 전체 데이터로 학습. 혼합이면 구성 방법마다 오늘 후보 중 순위(고정 기준)를 평균한다."""
+    methods = {m.key: m for m in METHODS}
+    if "components" not in chosen:
+        return methods[chosen["key"]].fit(labeled)
+    preds = [methods[k].fit(labeled) for k in chosen["components"]]
+    refs = [np.sort(p(today)) for p in preds]
+    return lambda df: np.mean(
+        [np.searchsorted(ref, p(df), side="right") / len(ref) for p, ref in zip(preds, refs)], axis=0
+    )
 
 
 def feature_report(labeled: pd.DataFrame) -> list[dict]:
@@ -398,12 +435,12 @@ def predict(prices: pd.DataFrame, bench: pd.Series, names: dict[str, str],
             top: int = 20, volumes: pd.DataFrame | None = None) -> dict:
     raw_all = build_dataset(prices, bench, volumes)
     data = cross_sectional_rank(raw_all)
-    method, results = compare_methods(data, top)
+    chosen, results = compare_methods(data, top)
 
     labeled = data.dropna(subset=["fwd_excess"])
-    predictor = method.fit(labeled)
     last_date = data["date"].max()
     today = data[data["date"] == last_date].set_index("ticker")
+    predictor = build_predictor(chosen, labeled, today)
     raw = raw_all[raw_all["date"] == last_date].set_index("ticker")
 
     score = pd.Series(predictor(today), index=today.index)
@@ -425,7 +462,6 @@ def predict(prices: pd.DataFrame, bench: pd.Series, names: dict[str, str],
             "reasons": reasons(contrib.loc[ticker], today.loc[ticker], raw.loc[ticker]),
             "similar": similar[ticker],
         }
-    chosen = next(r for r in results if r["chosen"])
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "as_of": f"{prices.index[-1]:%Y-%m-%d}",
@@ -433,7 +469,7 @@ def predict(prices: pd.DataFrame, bench: pd.Series, names: dict[str, str],
         "target": "향후 3개월 수익률이 SPY보다 높을지",
         "train_rows": int(len(labeled)),
         "candidates": int(len(today)),
-        "method": {"key": method.key, "label": method.label, "kind": method.kind, "description": method.description},
+        "method": {k: chosen[k] for k in ("key", "label", "kind", "description")},
         "accuracy": chosen["overall"],
         "holdout": chosen["holdout"],
         "methods": results,
@@ -467,7 +503,7 @@ def main(argv: list[str] | None = None) -> None:
     result = predict(prices, bench, names, args.top, volumes)
     args.out.write_text(json.dumps(result, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
 
-    print(f"학습 데이터 {result['train_rows']:,}행 | 지표 {len(FEATURES)}개(모델 입력 {len(MODEL_FEATURES)}개) | 방법 {len(METHODS)}개 | 추천 {args.top}개\n")
+    print(f"학습 데이터 {result['train_rows']:,}행 | 지표 {len(FEATURES)}개(모델 입력 {len(MODEL_FEATURES)}개) | 방법 {len(result['methods'])}개 | 추천 {args.top}개\n")
     print(f"{'방법':<14}{'선정 적중률':>10}{'초과수익':>10}{'검증 적중률':>12}{'초과수익':>10}{'AUC':>8}")
     for r in result["methods"]:
         s, h = r["selection"], r["holdout"]

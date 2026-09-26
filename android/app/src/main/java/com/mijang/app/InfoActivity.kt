@@ -12,7 +12,7 @@ import com.mijang.app.DetailActivity.Companion.pct0
 import com.mijang.app.DetailActivity.Companion.pct1
 import java.util.Locale
 
-/** 어떻게 예측하나: 방법 15가지 비교표, 지표별 과거 성적표. */
+/** 어떻게 예측하나: 방법 비교표(혼합 포함), 지표별 과거 성적표. */
 class InfoActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,12 +30,12 @@ class InfoActivity : ComponentActivity() {
         ui.body(
             "1. 지난 10년 동안 매월 말, 후보 종목마다 직전 1년 가격·거래량으로 지표 23개를 계산합니다.\n" +
                 "2. 그 뒤 3개월 동안 S&P 500(SPY)보다 더 올랐는지를 정답으로 기록합니다.\n" +
-                "3. 아래 15가지 방법으로 '과거로만 배우고 다음 해를 맞히기'를 반복해 성적을 매깁니다.\n" +
+                "3. 아래 ${report.methods.size}가지 방법(여러 방법을 섞은 혼합 포함)으로 '과거로만 배우고 다음 해를 맞히기'를 반복해 성적을 매깁니다.\n" +
                 "4. 선정 기간 적중률 1위 방법(지금은 ${chosen.label})으로 오늘 매수추천 20개를 고릅니다.\n" +
                 "매일 아침 7시 30분에 새 데이터로 다시 합니다."
         )
 
-        ui.title("방법 15가지 비교")
+        ui.title("방법 ${report.methods.size}가지 비교")
         ui.note("적중률 = 추천 20종목 중 3개월 뒤 SPY를 이긴 비율 (아무거나 고르면 ${pct0(report.baseHitRate)})\n" +
             "선정 ${chosen.selectionPeriod} 성적으로 방법을 고르고, 고를 때 안 쓴 검증 ${chosen.holdoutPeriod} 성적을 따로 봅니다.")
         ui.table(
@@ -51,6 +51,7 @@ class InfoActivity : ComponentActivity() {
             bold = { report.methods[it].chosen },
         )
         ui.note("검증 초과 = 추천 종목의 3개월 평균 SPY 대비 수익률.\n" +
+            "혼합 = 여러 방법의 점수를 순위로 바꿔 평균. 섞을 방법도 선정 기간 성적으로만 고릅니다.\n" +
             "방법이 많을수록 선정 기간 1위가 운일 가능성도 커지므로, 검증 적중률을 함께 보세요.")
         report.methods.forEach { ui.note("${it.label} (${it.kind}): ${it.description}") }
 
