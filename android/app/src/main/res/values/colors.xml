@@ -1,0 +1,9 @@
+<resources>
+    <color name="icon_bg">#000000</color>
+    <color name="up">#F0615C</color>
+    <color name="down">#5B8DEF</color>
+    <color name="flat">#9A9A9A</color>
+    <color name="bg">#121212</color>
+    <color name="text">#FFFFFF</color>
+    <color name="sub">#9A9A9A</color>
+</resources>

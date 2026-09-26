@@ -1,0 +1,40 @@
+name: android
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Test & build
+        run: ./gradlew testDebugUnitTest assembleDebug
+      - name: Rename APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk mijang.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mijang-apk
+          path: android/mijang.apk
+      - name: Publish "latest" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest mijang.apk \
+            --title "미장 앱 (최신)" \
+            --notes "빌드 #${GITHUB_RUN_NUMBER} · ${GITHUB_SHA::7}. 휴대폰에서 mijang.apk 를 받아 설치하세요." \
+            --target "$GITHUB_SHA"

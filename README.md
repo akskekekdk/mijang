@@ -1,4 +1,36 @@
-# mijang — 미장(미국 주식) 수익률 10대 지표
+# mijang — 미장(미국 주식) 수익률 도구
+
+<img src="android/tools/icon_preview.png" width="96" align="right" alt="미장 아이콘">
+
+1. **안드로이드 앱 "미장"**: 최근 5년 수익률 상위 20개 미국 종목을 골라 잠금화면 알림으로 보여줍니다.
+2. **Python 도구**: 종목별 수익률 10대 지표 계산, 5년 수익률 TOP 20 출력.
+
+## 📱 안드로이드 앱 설치
+
+휴대폰 브라우저에서 GitHub에 로그인한 뒤 아래 링크로 APK를 받아 설치하세요.
+
+**https://github.com/akskekekdk/mijang/releases/latest/download/mijang.apk**
+
+- 처음 설치할 때 "출처를 알 수 없는 앱 설치"를 허용해야 합니다.
+- 앱을 처음 열면 알림 권한을 허용하세요. 5년 데이터를 모으느라 첫 로딩에 1분 정도 걸립니다.
+- main에 푸시할 때마다 새 APK가 자동으로 빌드됩니다. 같은 링크로 받아 덮어서 설치하면 됩니다.
+
+### 동작 방식
+
+- **종목 선정**: `data/universe.txt`의 S&P 100 + 나스닥 100 종목 중 상장한 지 5년이 넘은 종목을
+  최근 5년 누적 수익률(수정주가, 배당 재투자 반영) 순으로 정렬해 상위 20개를 고릅니다. 순위는 하루에 한 번 다시 계산합니다.
+- **알림**: 1시간마다 현재가와 전일 대비 등락률을 받아서 알림 2개(1~10위, 11~20위)로 띄웁니다.
+  상승은 빨강, 하락은 파랑으로 표시하고 맨 아래에 `09.26(토) 09:47 기준`처럼 조회 시각을 붙입니다.
+- **잠금화면 표시**: 삼성 휴대폰은 `설정 → 잠금화면 → 알림`에서 "상세히 보기"를 켜야 내용까지 보입니다.
+  배터리 최적화 때문에 갱신이 늦으면 `설정 → 애플리케이션 → 미장 → 배터리 → 제한 없음`으로 바꾸세요.
+
+## 5년 수익률 TOP 20 (Python)
+
+```bash
+python -m mijang.top20
+```
+
+## 수익률 10대 지표 (Python)
 
 Yahoo Finance 데이터(`yfinance`)로 미국 주식의 수익률·위험을 10가지 지표로 계산합니다.
 
@@ -58,7 +90,7 @@ git config user.email "내 이메일"
 ```bash
 git add .
 git commit -m "변경 내용"
-git push -u origin <브랜치명>   # 처음 한 번만 -u, 이후엔 git push
+git push origin main
 ```
 
 HTTPS 푸시 시 비밀번호 대신 GitHub Personal Access Token(Settings → Developer settings → Tokens)을 사용하세요.

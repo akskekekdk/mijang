@@ -52,3 +52,22 @@ def test_compute_indicators_has_ten_keys():
     result = compute_indicators(p, bench, risk_free=0.04)
     assert len(result) == 10
     assert all(np.isfinite(v) for v in result.values())
+
+
+def test_rank_skips_short_history_and_sorts():
+    from mijang.top20 import load_universe, rank
+
+    idx = pd.bdate_range("2021-01-01", "2026-01-01")
+    n = len(idx)
+    prices = pd.DataFrame(
+        {
+            "SLOW": np.linspace(100, 150, n),
+            "FAST": np.linspace(100, 400, n),
+            "NEW": [np.nan] * (n // 2) + list(np.linspace(10, 100, n - n // 2)),
+        },
+        index=idx,
+    )
+    result = rank(prices, top=20)
+    assert list(result["ticker"]) == ["FAST", "SLOW"]
+    assert result.loc[1, "return_5y"] == pytest.approx(3.0)
+    assert load_universe()["NVDA"] == "엔비디아"

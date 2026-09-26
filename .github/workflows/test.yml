@@ -2,6 +2,7 @@ name: test
 
 on:
   push:
+    paths-ignore: ["android/**"]
   pull_request:
 
 jobs:
