@@ -8,19 +8,16 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
 import android.os.Build
-import android.text.SpannableStringBuilder
-import android.text.Spanned
-import android.text.style.ForegroundColorSpan
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
 object Notifier {
     private const val CHANNEL = "top20"
-    private const val ID_BASE = 1
-    private const val PAGE = 10
-    private const val MAX_PAGES = 2
+    private const val ID = 1
+    private const val OLD_SECOND_PAGE_ID = 2
+    private const val COLLAPSED_ROWS = 3
 
     fun createChannel(context: Context) {
         val channel = NotificationChannel(
@@ -36,48 +33,47 @@ object Notifier {
     }
 
     /**
-     * 알림 한 개에 BigText 는 13줄 정도까지만 보이므로, 스크린샷처럼 10종목 + 기준시각씩
-     * 두 개로 나눠 띄운다 (1~10위가 위에 오도록 11~20위를 먼저 올린다).
+     * 알림 한 개에 20종목 + 기준 시각을 모두 넣는다. 기본 템플릿(BigTextStyle)은 글자 크기를 못 바꾸고
+     * 높이 제한 때문에 20줄이 잘리므로, 작은 글씨의 커스텀 레이아웃을 쓴다. 제목은 넣지 않는다.
      */
     fun show(context: Context, snapshot: Snapshot) {
         if (Build.VERSION.SDK_INT >= 33 &&
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) return
 
-        val pages = snapshot.stocks.chunked(PAGE)
-        val manager = NotificationManagerCompat.from(context)
-        for (page in pages.indices.reversed()) {
-            manager.notify(ID_BASE + page, build(context, snapshot, pages[page], page * PAGE + 1))
-        }
-        for (page in pages.size until MAX_PAGES) manager.cancel(ID_BASE + page)
-    }
+        val big = RemoteViews(context.packageName, R.layout.notif_big)
+        addRows(context, big, snapshot.stocks)
+        big.setTextViewText(R.id.footer, Format.asOf(snapshot.quotedAt))
 
-    private fun build(context: Context, snapshot: Snapshot, stocks: List<Stock>, firstRank: Int): Notification {
-        val body = SpannableStringBuilder(Format.lines(context, stocks, firstRank)).append("\n\n")
-        val start = body.length
-        body.append(Format.asOf(snapshot.quotedAt))
-        body.setSpan(ForegroundColorSpan(context.getColor(R.color.sub)), start, body.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-
-        val lastRank = firstRank + stocks.size - 1
-        val first = stocks.first()
-        val collapsed = "$firstRank. ${first.name} ${Format.price(first.price)} ${Format.percent(first.change)} 외 ${stocks.size - 1}종목"
+        val small = RemoteViews(context.packageName, R.layout.notif_small)
+        addRows(context, small, snapshot.stocks.take(COLLAPSED_ROWS))
 
         val open = PendingIntent.getActivity(
             context, 0, Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        return NotificationCompat.Builder(context, CHANNEL)
+        val notification = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_mijang)
-            .setLargeIcon(BitmapFactory.decodeResource(context.resources, R.drawable.ic_notif_large))
-            .setContentTitle("${context.getString(R.string.title)} · $firstRank~${lastRank}위")
-            .setContentText(collapsed)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(small)
+            .setCustomBigContentView(big)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setShowWhen(false)
-            .setSortKey("page$firstRank")
             .setContentIntent(open)
             .build()
+        val manager = NotificationManagerCompat.from(context)
+        manager.cancel(OLD_SECOND_PAGE_ID) // 이전 버전의 11~20위 알림 정리
+        manager.notify(ID, notification)
+    }
+
+    private fun addRows(context: Context, parent: RemoteViews, stocks: List<Stock>) {
+        parent.removeAllViews(R.id.rows)
+        Format.rows(context, stocks).forEach { line ->
+            val row = RemoteViews(context.packageName, R.layout.notif_row)
+            row.setTextViewText(R.id.row, line)
+            parent.addView(R.id.rows, row)
+        }
     }
 }

@@ -1,0 +1,15 @@
+<resources>
+    <!-- 20줄이 알림 최대 높이 안에 들어가도록 작은 글씨 + 한 줄 고정(길면 …) -->
+    <style name="NotifRow" parent="@android:style/TextAppearance.Material.Notification">
+        <item name="android:textSize">11sp</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="NotifFooter" parent="@android:style/TextAppearance.Material.Notification.Info">
+        <item name="android:textSize">10sp</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+</resources>

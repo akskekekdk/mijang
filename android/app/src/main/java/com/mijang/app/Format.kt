@@ -27,14 +27,12 @@ object Format {
         SimpleDateFormat("MM.dd(E) HH:mm 기준", Locale.KOREAN).format(Date(millis))
 
     /**
-     * "1. 엔비디아  $225.07 +0.22%" 형태의 줄들. [firstRank] 는 첫 줄 순위 번호,
+     * 종목마다 "1. 엔비디아  $225.07 +0.22%" 한 줄. [firstRank] 는 첫 줄 순위 번호,
      * [withProb] 이면 모델이 추정한 SPY 초과 확률도 붙인다.
      */
-    fun lines(context: Context, stocks: List<Stock>, firstRank: Int = 1, withProb: Boolean = false): CharSequence {
-        val sb = SpannableStringBuilder()
-        stocks.forEachIndexed { i, s ->
-            if (i > 0) sb.append('\n')
-            sb.append("${firstRank + i}. ${s.name}  ${price(s.price)} ")
+    fun rows(context: Context, stocks: List<Stock>, firstRank: Int = 1, withProb: Boolean = false): List<CharSequence> =
+        stocks.mapIndexed { i, s ->
+            val sb = SpannableStringBuilder("${firstRank + i}. ${s.name}  ${price(s.price)} ")
             val start = sb.length
             sb.append(percent(s.change))
             sb.setSpan(ForegroundColorSpan(color(context, s.change)), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -43,7 +41,15 @@ object Format {
                 sb.append("   확률 ${percent(s.prob, sign = false)}")
                 sb.setSpan(ForegroundColorSpan(context.getColor(R.color.sub)), subStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
+            sb
         }
-        return sb
-    }
+
+    /** [rows] 를 줄바꿈으로 이은 것 (앱 화면용). */
+    fun lines(context: Context, stocks: List<Stock>, withProb: Boolean = false): CharSequence =
+        SpannableStringBuilder().apply {
+            rows(context, stocks, withProb = withProb).forEachIndexed { i, row ->
+                if (i > 0) append('\n')
+                append(row)
+            }
+        }
 }
