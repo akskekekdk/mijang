@@ -27,6 +27,7 @@ class MainActivity : ComponentActivity() {
         setContentView(R.layout.activity_main)
         status = findViewById(R.id.status)
         content = findViewById(R.id.content)
+        findViewById<Button>(R.id.info).setOnClickListener { InfoActivity.open(this) }
         findViewById<Button>(R.id.refresh).setOnClickListener {
             UpdateWorker.runNow(this, forceFetch = true)
         }
@@ -39,7 +40,8 @@ class MainActivity : ComponentActivity() {
                 render()
             }
 
-        if (Store.load(this) == null) UpdateWorker.runNow(this, forceFetch = true)
+        // 처음 실행이거나, 근거 데이터가 없는 이전 버전에서 업데이트한 경우
+        if (Store.load(this) == null || Store.report(this) == null) UpdateWorker.runNow(this, forceFetch = true)
     }
 
     override fun onResume() {
@@ -63,7 +65,7 @@ class MainActivity : ComponentActivity() {
         val recommended = snapshot?.stocks?.map { it.ticker }?.toSet() ?: emptySet()
         watchlist.forEach { w ->
             val quote = snapshot?.quotes?.get(w.ticker)
-            row(Format.watchedLine(this, w, quote, w.ticker in recommended), getString(R.string.remove), true) {
+            row(w.ticker, Format.watchedLine(this, w, quote, w.ticker in recommended), getString(R.string.remove), true) {
                 Store.removeWatch(this, w.ticker)
                 render()
             }
@@ -72,12 +74,12 @@ class MainActivity : ComponentActivity() {
         if (snapshot == null) return
         section(getString(R.string.recommend))
         note("${snapshot.prediction.asOf} 종가까지 학습 · 향후 3개월 SPY(S&P 500)보다 오를 종목 예측\n" +
-            snapshot.prediction.summary)
+            snapshot.prediction.summary + "\n" + getString(R.string.tap_hint))
         val watched = watchlist.map { it.ticker }.toSet()
         Format.rows(this, snapshot.stocks, withScore = true).zip(snapshot.stocks).forEach { (line, stock) ->
             val isWatched = stock.ticker in watched
-            row(line, getString(if (isWatched) R.string.added else R.string.add), !isWatched) {
-                Store.addWatch(this, stock)
+            row(stock.ticker, line, getString(if (isWatched) R.string.added else R.string.add), !isWatched) {
+                Store.addWatch(this, stock.ticker, stock.name, stock.price)
                 render()
             }
         }
@@ -96,8 +98,9 @@ class MainActivity : ComponentActivity() {
         content.addView(v)
     }
 
-    private fun row(text: CharSequence, action: String, enabled: Boolean, onClick: () -> Unit) {
+    private fun row(ticker: String, text: CharSequence, action: String, enabled: Boolean, onClick: () -> Unit) {
         val v = LayoutInflater.from(this).inflate(R.layout.item_stock, content, false)
+        v.setOnClickListener { DetailActivity.open(this, ticker) }
         v.findViewById<TextView>(R.id.text).text = text
         v.findViewById<Button>(R.id.action).apply {
             this.text = action

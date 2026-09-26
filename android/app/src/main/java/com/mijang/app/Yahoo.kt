@@ -22,7 +22,11 @@ object Net {
 object Predictions {
     private const val URL = "https://raw.githubusercontent.com/akskekekdk/mijang/main/data/predictions.json"
 
-    fun fetch(): Prediction = Prediction.parse(Net.get(URL))
+    /** 예측 요약과, 근거 화면용 원본 JSON. */
+    fun fetch(): Pair<Prediction, String> {
+        val json = Net.get(URL)
+        return Prediction.parse(json) to json
+    }
 }
 
 /** Yahoo Finance 차트 API (키 불필요). */

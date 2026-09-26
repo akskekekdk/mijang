@@ -1,6 +1,7 @@
 package com.mijang.app
 
 import android.content.Context
+import java.io.File
 
 object Store {
     private const val PREFS = "mijang"
@@ -16,6 +17,18 @@ object Store {
         prefs(context).edit().putString(KEY, snapshot.toJson()).apply()
     }
 
+    private fun reportFile(context: Context) = File(context.filesDir, "predictions.json")
+
+    fun saveReport(context: Context, json: String) {
+        val tmp = File(context.filesDir, "predictions.json.tmp")
+        tmp.writeText(json)
+        tmp.renameTo(reportFile(context))
+    }
+
+    /** 근거 화면용 전체 예측 파일. */
+    fun report(context: Context): Report? =
+        reportFile(context).takeIf { it.exists() }?.let { runCatching { Report.parse(it.readText()) }.getOrNull() }
+
     fun watchlist(context: Context): List<Watched> =
         prefs(context).getString(WATCH, null)?.let { runCatching { Watched.listFromJson(it) }.getOrNull() }
             ?: emptyList()
@@ -24,10 +37,10 @@ object Store {
         prefs(context).edit().putString(WATCH, Watched.listToJson(list)).apply()
     }
 
-    fun addWatch(context: Context, stock: Stock) {
+    fun addWatch(context: Context, ticker: String, name: String, price: Double) {
         val list = watchlist(context)
-        if (list.none { it.ticker == stock.ticker }) {
-            saveWatchlist(context, list + Watched(stock.ticker, stock.name, System.currentTimeMillis(), stock.price))
+        if (list.none { it.ticker == ticker }) {
+            saveWatchlist(context, list + Watched(ticker, name, System.currentTimeMillis(), price))
         }
     }
 

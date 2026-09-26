@@ -90,6 +90,13 @@ def test_model_learns_planted_signal_without_lookahead():
     assert result["accuracy"]["avg_excess_3m"] > result["accuracy"]["universe_avg_excess_3m"]
     assert sum(r["chosen"] for r in result["methods"]) == 1
     assert len(result["methods"]) == len(m.METHODS)
+    # 근거: 모든 후보에 지표표·기여도·유사사례가 있고, 추천 종목에는 이유 문장이 있다
+    d = result["details"][result["stocks"][0]["ticker"]]
+    assert set(d["values"]) == set(m.FEATURES) and d["contrib"]["cagr"] is None
+    assert d["similar"]["n"] == m.SIMILAR_K and len(d["similar"]["examples"]) == 3
+    assert d["recommended"] and d["rank"] == 1
+    assert len(result["details"]) == 30
+    assert [f["key"] for f in result["features"]] == m.FEATURES
     # 추세가 강한 절반(T15~T29)에서만 뽑혀야 한다
     assert {s["ticker"] for s in result["stocks"]} <= {f"T{i}" for i in range(15, 30)}
     # 최근 데이터(정답 미확정)는 학습에 쓰이지 않았는지
@@ -109,3 +116,16 @@ def test_technical_indicators_on_known_series():
     assert t["from_low"] == pytest.approx(1.0)
     assert t["ma200_gap"] > 0 and t["macd_hist"] >= 0
     assert t["volume_trend"] == pytest.approx(0.0)
+
+
+def test_contributions_follow_rule_weights():
+    """규칙 방법에선 쓰인 지표만 기여도가 있고, 방향이 맞아야 한다."""
+    from mijang import model as m
+
+    rng = np.random.default_rng(0)
+    today = pd.DataFrame(rng.random((50, len(m.FEATURES))), columns=m.FEATURES)
+    predictor = m._rule({"mom_12_1": 1})(today)
+    c = m.contributions(predictor, today)
+    best = today["mom_12_1"].idxmax()
+    assert c.loc[best, "mom_12_1"] > 0
+    assert (c.drop(columns="mom_12_1").abs() < 1e-9).all().all()

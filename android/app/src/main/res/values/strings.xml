@@ -8,6 +8,9 @@
     <string name="add">담기</string>
     <string name="added">담음</string>
     <string name="remove">삭제</string>
+    <string name="info">근거</string>
+    <string name="info_title">어떻게 예측하나</string>
+    <string name="tap_hint">종목을 누르면 추천 근거와 지표 표를 볼 수 있어요.</string>
     <string name="refresh">새로고침</string>
     <string name="loading">불러오는 중…</string>
     <string name="disclaimer">과거 패턴 기반 참고용 예측이며 수익을 보장하지 않습니다.</string>

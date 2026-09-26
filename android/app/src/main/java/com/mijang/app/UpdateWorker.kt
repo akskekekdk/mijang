@@ -30,7 +30,11 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             val force = inputData.getBoolean(KEY_FORCE_FETCH, false)
             val needFetch = force || old == null || now - old.fetchedAt > FETCH_TTL_MS
 
-            val prediction = if (needFetch) Predictions.fetch() else old!!.prediction
+            val prediction = if (needFetch) {
+                val (p, json) = Predictions.fetch()
+                Store.saveReport(applicationContext, json)
+                p
+            } else old!!.prediction
             val fetchedAt = if (needFetch) now else old!!.fetchedAt
             if (prediction.stocks.isEmpty()) return@withContext Result.retry()
 
