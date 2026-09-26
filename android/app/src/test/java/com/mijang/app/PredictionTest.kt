@@ -44,13 +44,13 @@ class ReportTest {
         val p = Prediction.parse(json)
         assertEquals(1, r.methods.count { it.chosen })
         assertEquals(p.method, r.methodLabel)
-        assertEquals(23, r.features.size)
+        assertTrue(r.features.map { it.key }.containsAll(listOf("per", "pbr", "roe", "sharpe")))
         assertEquals(r.candidates, r.details.size)
         p.stocks.forEachIndexed { i, s ->
             val d = r.details.getValue(s.ticker)
             assertEquals(i + 1, d.rank)
             assertTrue(d.recommended)
-            assertTrue(d.contrib.size == 22) // CAGR은 모델 입력이 아니라 기여도 없음
+            assertEquals(r.features.size - 1, d.contrib.size) // CAGR은 모델 입력이 아니라 기여도 없음
             assertEquals(3, d.similar.examples.size)
         }
         assertTrue(r.details.values.count { it.recommended } == p.stocks.size)

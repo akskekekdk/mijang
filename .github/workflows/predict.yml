@@ -24,6 +24,15 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -r requirements.txt
+      # SEC 공시 원본(약 600MB)은 주 단위로 캐시해서 매일 다시 받지 않는다.
+      - name: Week key
+        id: week
+        run: echo "key=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: .cache/edgar
+          key: edgar-${{ steps.week.outputs.key }}
+          restore-keys: edgar-
       - run: python -m mijang.model
       - name: Commit predictions
         run: |

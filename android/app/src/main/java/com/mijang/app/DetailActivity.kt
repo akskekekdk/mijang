@@ -10,7 +10,7 @@ import androidx.activity.ComponentActivity
 import java.util.Locale
 import kotlin.math.roundToInt
 
-/** 종목 하나의 추천 근거: 이유, 비슷한 과거 사례, 지표 23개 표. */
+/** 종목 하나의 추천 근거: 이유, 비슷한 과거 사례, 지표 표(가격·재무). */
 class DetailActivity : ComponentActivity() {
     private lateinit var ui: Ui
     private lateinit var ticker: String
@@ -72,7 +72,7 @@ class DetailActivity : ComponentActivity() {
             sim.examples.map { listOf("${it.date} ${it.name}", ui.signed(pct1(it.excess), it.excess)) },
         )
 
-        ui.title("지표 23개")
+        ui.title("지표 ${report.features.size}개")
         ui.table(
             listOf("지표", "값", "후보 중", "영향"),
             report.features.map { f ->
@@ -88,7 +88,8 @@ class DetailActivity : ComponentActivity() {
             },
         )
         ui.note("'후보 중' = 오늘 후보 ${report.candidates}개 가운데 위치. '영향' 빨강은 점수를 올린 지표, 파랑은 깎은 지표.\n" +
-            "연평균 수익률은 1년 구간에선 1년 수익률과 같아서 모델 입력에서 뺐습니다.")
+            "연평균 수익률은 1년 구간에선 1년 수익률과 같아서 모델 입력에서 뺐습니다.\n" +
+            "PER~부채비율은 SEC 공시 기준(최근 4분기). 적자면 PER, 자본잠식이면 PBR·ROE가 '-'로 나옵니다.")
         ui.title("지표 설명")
         report.features.forEach { ui.note("${it.label}: ${it.description}") }
     }

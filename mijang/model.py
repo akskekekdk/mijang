@@ -1,9 +1,9 @@
 """여러 지표 × 여러 예측 방법을 과거 데이터로 겨뤄서 가장 잘 맞힌 방법으로 매수추천: python -m mijang.model
 
-1. 매월 말, 종목마다 직전 1년 가격·거래량으로 지표 23개를 계산한다
-   (10대 수익률 지표 + 모멘텀·추세·과열·거래량 기술지표).
+1. 매월 말, 종목마다 지표 31개를 계산한다: 직전 1년 가격·거래량으로 10대 수익률 지표 + 기술지표 13개,
+   SEC 공시로 재무지표 8개(PER·PBR·PSR·ROE·영업이익률·매출/EPS 성장률·부채비율, 그 시점까지 공시된 값만).
 2. 정답: 그 뒤 3개월(63거래일) 동안 S&P 500(SPY)보다 많이 올랐는가.
-3. 예측 방법 15가지(팩터 규칙 7 + 머신러닝 7 + 앙상블)와, 이들을 섞은 혼합 4가지를
+3. 예측 방법 20가지(팩터 규칙 12 + 머신러닝 7 + 앙상블)와, 이들을 섞은 혼합 4가지를
    연도별 워크포워드로 검증한다 (항상 과거로만 학습 → 다음 해 예측).
 4. "선정 기간"의 추천 적중률(추천 종목 중 SPY를 이긴 비율)이 가장 높은 방법을 고르고,
    고를 때 쓰지 않은 최근 "검증 기간" 성적을 따로 보고한다.
@@ -28,6 +28,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.neighbors import KNeighborsClassifier, NearestNeighbors
 from sklearn.neural_network import MLPClassifier
 
+from .fundamentals import FUND_KEYS, Company, load_companies
 from .indicators import compute_indicators
 from .top20 import load_universe
 
@@ -63,6 +64,15 @@ FEATURE_INFO = [
     ("bb_pctb", "볼린저 %B", "20일 밴드 안 위치 (1 위쪽 끝, 0 아래쪽 끝)", "num"),
     ("vol_1m", "1개월 변동성", "최근 21거래일 변동성 (연환산)", "pct"),
     ("volume_trend", "거래량 추세", "20일 평균 거래량 ÷ 120일 평균 − 1", "pct"),
+    # 재무 지표 (SEC 공시, 그 시점까지 공시된 최근 4분기 기준)
+    ("per", "PER", "주가 ÷ 주당순이익 (적자면 없음)", "num"),
+    ("pbr", "PBR", "주가 ÷ 주당순자산", "num"),
+    ("psr", "PSR", "주가 ÷ 주당매출", "num"),
+    ("roe", "ROE", "순이익 ÷ 자기자본", "pct"),
+    ("op_margin", "영업이익률", "영업이익 ÷ 매출", "pct"),
+    ("rev_growth", "매출 성장률", "최근 4분기 매출 ÷ 1년 전 4분기 매출 − 1", "pct"),
+    ("eps_growth", "EPS 성장률", "최근 4분기 EPS의 1년 전 대비 변화", "pct"),
+    ("debt_ratio", "부채비율", "부채 ÷ 자기자본", "num"),
 ]
 FEATURES = [k for k, *_ in FEATURE_INFO]
 # 1년 구간에선 CAGR == 1년 수익률이라 똑같은 지표가 두 번 들어가면 선형 모델 가중치가 서로 상쇄된다.
@@ -129,7 +139,8 @@ def features_at(prices: pd.DataFrame, volumes: pd.DataFrame | None, bench: pd.Se
         v = vol_w[ticker] if vol_w is not None and ticker in vol_w else None
         row.update(technical(p, v))
         rows[ticker] = row
-    return pd.DataFrame.from_dict(rows, orient="index")[FEATURES] if rows else pd.DataFrame(columns=FEATURES)
+    df = pd.DataFrame.from_dict(rows, orient="index") if rows else pd.DataFrame()
+    return df.reindex(columns=FEATURES).astype(float)  # 재무지표 칸은 build_dataset 에서 채운다
 
 
 def rebalance_days(index: pd.DatetimeIndex) -> list[int]:
@@ -141,13 +152,23 @@ def rebalance_days(index: pd.DatetimeIndex) -> list[int]:
     return [d for d in days if d >= WINDOW]
 
 
-def build_dataset(prices: pd.DataFrame, bench: pd.Series, volumes: pd.DataFrame | None = None) -> pd.DataFrame:
-    """(날짜, 종목)별 지표 원래값과 정답. 미래 3개월이 아직 안 지난 행은 정답이 NaN."""
+def build_dataset(prices: pd.DataFrame, bench: pd.Series, volumes: pd.DataFrame | None = None,
+                  companies: dict[str, Company] | None = None, raw_prices: pd.DataFrame | None = None) -> pd.DataFrame:
+    """(날짜, 종목)별 지표 원래값과 정답. 미래 3개월이 아직 안 지난 행은 정답이 NaN.
+    companies 가 있으면 재무지표도 넣는다 (raw_prices: 배당 조정 안 한 종가, PER 등 계산용)."""
     frames = []
+    val_prices = raw_prices if raw_prices is not None else prices
     for i in rebalance_days(prices.index):
         feats = features_at(prices, volumes, bench, i)
         if feats.empty:
             continue
+        date = prices.index[i]
+        for ticker in feats.index:
+            comp = (companies or {}).get(ticker)
+            price = val_prices[ticker].iloc[i] if ticker in val_prices else np.nan
+            if comp is not None and not np.isnan(price):
+                for k, v in comp.at(date, price).items():
+                    feats.loc[ticker, k] = v
         if i + HORIZON < len(prices):
             fwd = prices.iloc[i + HORIZON] / prices.iloc[i] - 1
             fwd_bench = bench.iloc[i + HORIZON] / bench.iloc[i] - 1
@@ -246,7 +267,14 @@ METHODS = [
     Method("near_high", "신고가 근접", "규칙", "52주 고점에 가까운 순", _rule({"from_high": 1})),
     Method("multi", "멀티팩터", "규칙", "모멘텀 + 샤프 + 저변동성 순위 평균",
            _rule({"mom_12_1": 1, "sharpe": 1, "volatility": -1})),
-    Method("logistic", "로지스틱 회귀", "머신러닝", "지표 22개의 가중합으로 SPY 초과 확률", _classifier(_logistic)),
+    Method("value", "가치", "규칙", "PER·PBR·PSR 낮은 순 (저평가)", _rule({"per": -1, "pbr": -1, "psr": -1})),
+    Method("quality", "퀄리티", "규칙", "ROE·영업이익률 높고 부채비율 낮은 순",
+           _rule({"roe": 1, "op_margin": 1, "debt_ratio": -1})),
+    Method("growth", "성장", "규칙", "매출·EPS 성장률 높은 순", _rule({"rev_growth": 1, "eps_growth": 1})),
+    Method("value_mom", "가치+모멘텀", "규칙", "싸면서(PER·PBR 낮고) 오르는 중(12-1 모멘텀)",
+           _rule({"per": -1, "pbr": -1, "mom_12_1": 2})),
+    Method("garp", "성장+가치(GARP)", "규칙", "성장률 높은데 PER 낮은 순", _rule({"eps_growth": 1, "rev_growth": 1, "per": -2})),
+    Method("logistic", "로지스틱 회귀", "머신러닝", "지표 30개의 가중합으로 SPY 초과 확률", _classifier(_logistic)),
     Method("ridge", "릿지 순위회귀", "머신러닝", "3개월 뒤 순위(몇 등)를 직접 예측하는 선형 회귀", _ridge_rank),
     Method("knn", "유사사례(k-NN)", "머신러닝", "과거에 지표가 가장 비슷했던 200건의 결과 비율", _classifier(_knn)),
     Method("gbm", "그래디언트 부스팅", "머신러닝", "얕은 결정트리 100개를 차례로 보정", _classifier(_gbm)),
@@ -431,9 +459,10 @@ def reasons(contrib: pd.Series, ranks: pd.Series, raw: pd.Series, n: int = 3) ->
 
 # ---------------------------------------------------------------- 예측
 
-def predict(prices: pd.DataFrame, bench: pd.Series, names: dict[str, str],
-            top: int = 20, volumes: pd.DataFrame | None = None) -> dict:
-    raw_all = build_dataset(prices, bench, volumes)
+def predict(prices: pd.DataFrame, bench: pd.Series, names: dict[str, str], top: int = 20,
+            volumes: pd.DataFrame | None = None, companies: dict[str, Company] | None = None,
+            raw_prices: pd.DataFrame | None = None) -> dict:
+    raw_all = build_dataset(prices, bench, volumes, companies, raw_prices)
     data = cross_sectional_rank(raw_all)
     chosen, results = compare_methods(data, top)
 
@@ -481,12 +510,13 @@ def predict(prices: pd.DataFrame, bench: pd.Series, names: dict[str, str],
 
 # ---------------------------------------------------------------- 실행
 
-def load_prices(tickers: list[str], period: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_prices(tickers: list[str], period: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """(수정종가: 배당·분할 조정, 종가: 분할만 조정, 거래량, 분할 비율)"""
     import yfinance as yf
 
-    data = yf.download(tickers, period=period, auto_adjust=True, progress=False)
-    close = data["Close"].dropna(how="all")
-    return close, data["Volume"].reindex(close.index)
+    data = yf.download(tickers, period=period, auto_adjust=False, actions=True, progress=False)
+    adj = data["Adj Close"].dropna(how="all")
+    return adj, data["Close"].reindex(adj.index), data["Volume"].reindex(adj.index), data["Stock Splits"].reindex(adj.index)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -497,10 +527,10 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     names = load_universe()
-    prices, volumes = load_prices(list(names) + [BENCHMARK], args.period)
+    prices, raw_prices, volumes, splits = load_prices(list(names) + [BENCHMARK], args.period)
     bench = prices.pop(BENCHMARK)
-    volumes = volumes.drop(columns=[BENCHMARK], errors="ignore")
-    result = predict(prices, bench, names, args.top, volumes)
+    companies = load_companies(list(prices.columns), splits)
+    result = predict(prices, bench, names, args.top, volumes, companies, raw_prices)
     args.out.write_text(json.dumps(result, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
 
     print(f"학습 데이터 {result['train_rows']:,}행 | 지표 {len(FEATURES)}개(모델 입력 {len(MODEL_FEATURES)}개) | 방법 {len(result['methods'])}개 | 추천 {args.top}개\n")
