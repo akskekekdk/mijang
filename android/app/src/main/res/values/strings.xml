@@ -2,7 +2,12 @@
     <string name="app_name">미장</string>
     <string name="channel_name">미장 TOP 20</string>
     <string name="channel_desc">AI가 예측한 유망 미국 종목 시세</string>
-    <string name="title">AI 예측 TOP 20</string>
+    <string name="recommend">매수추천 TOP 20</string>
+    <string name="watchlist">내가 담은 종목</string>
+    <string name="watch_empty">매수추천에서 담기를 누르면 여기에 계속 남아요. 삭제해야만 사라집니다.</string>
+    <string name="add">담기</string>
+    <string name="added">담음</string>
+    <string name="remove">삭제</string>
     <string name="refresh">새로고침</string>
     <string name="loading">불러오는 중…</string>
     <string name="disclaimer">과거 패턴 기반 참고용 예측이며 수익을 보장하지 않습니다.</string>

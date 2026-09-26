@@ -87,10 +87,25 @@ def test_model_learns_planted_signal_without_lookahead():
 
     result = m.predict(prices, bench, {"T29": "최고"}, top=5)
     assert len(result["stocks"]) == 5
-    assert result["backtest"]["top_avg_excess_3m"] > result["backtest"]["universe_avg_excess_3m"]
+    assert result["accuracy"]["avg_excess_3m"] > result["accuracy"]["universe_avg_excess_3m"]
+    assert sum(r["chosen"] for r in result["methods"]) == 1
+    assert len(result["methods"]) == len(m.METHODS)
     # 추세가 강한 절반(T15~T29)에서만 뽑혀야 한다
     assert {s["ticker"] for s in result["stocks"]} <= {f"T{i}" for i in range(15, 30)}
     # 최근 데이터(정답 미확정)는 학습에 쓰이지 않았는지
     data = m.build_dataset(prices, bench)
     last = data[data["date"] == data["date"].max()]
     assert last["fwd_excess"].isna().all()
+
+
+def test_technical_indicators_on_known_series():
+    from mijang.model import WINDOW, technical
+
+    idx = pd.bdate_range("2020-01-01", periods=WINDOW + 1)
+    rising = pd.Series(np.linspace(100, 200, WINDOW + 1), index=idx)
+    t = technical(rising, pd.Series(1000.0, index=idx))
+    assert t["rsi14"] == 100.0  # 매일 오르면 RSI 100
+    assert t["from_high"] == 0.0
+    assert t["from_low"] == pytest.approx(1.0)
+    assert t["ma200_gap"] > 0 and t["macd_hist"] >= 0
+    assert t["volume_trend"] == pytest.approx(0.0)

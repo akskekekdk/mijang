@@ -34,12 +34,13 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             val fetchedAt = if (needFetch) now else old!!.fetchedAt
             if (prediction.stocks.isEmpty()) return@withContext Result.retry()
 
-            val quoted = parallel(prediction.stocks) { s ->
-                runCatching { Yahoo.quote(s.ticker) }
-                    .map { (price, prev) -> s.copy(price = price, prevClose = prev) }
-                    .getOrDefault(s)
-            }
-            val snapshot = Snapshot(prediction.copy(stocks = quoted), fetchedAt, System.currentTimeMillis())
+            // 추천 종목 + 내가 담은 종목 시세를 한 번에 조회
+            val tickers = (prediction.stocks.map { it.ticker } + Store.watchlist(applicationContext).map { it.ticker }).distinct()
+            val quotes = parallel(tickers) { t -> t to runCatching { Yahoo.quote(t) }.getOrNull() }
+                .mapNotNull { (t, q) -> q?.let { t to Quote(it.first, it.second) } }
+                .toMap()
+            val quoted = prediction.stocks.map { it.withQuote(quotes[it.ticker]) }
+            val snapshot = Snapshot(prediction.copy(stocks = quoted), fetchedAt, System.currentTimeMillis(), quotes)
             Store.save(applicationContext, snapshot)
             Notifier.show(applicationContext, snapshot)
             Result.success()

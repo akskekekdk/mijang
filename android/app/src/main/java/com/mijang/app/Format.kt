@@ -28,28 +28,42 @@ object Format {
 
     /**
      * 종목마다 "1. 엔비디아  $225.07 +0.22%" 한 줄. [firstRank] 는 첫 줄 순위 번호,
-     * [withProb] 이면 모델이 추정한 SPY 초과 확률도 붙인다.
+     * [withScore] 이면 추천 점수(0~100)도 붙인다.
      */
-    fun rows(context: Context, stocks: List<Stock>, firstRank: Int = 1, withProb: Boolean = false): List<CharSequence> =
+    fun rows(context: Context, stocks: List<Stock>, firstRank: Int = 1, withScore: Boolean = false): List<CharSequence> =
         stocks.mapIndexed { i, s ->
-            val sb = SpannableStringBuilder("${firstRank + i}. ${s.name}  ${price(s.price)} ")
-            val start = sb.length
-            sb.append(percent(s.change))
-            sb.setSpan(ForegroundColorSpan(color(context, s.change)), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            if (withProb) {
-                val subStart = sb.length
-                sb.append("   확률 ${percent(s.prob, sign = false)}")
-                sb.setSpan(ForegroundColorSpan(context.getColor(R.color.sub)), subStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            }
+            val sb = SpannableStringBuilder("${firstRank + i}. ")
+            sb.append(quoteLine(context, s.name, s.price, s.change))
+            if (withScore) sub(context, sb, "\n점수 ${Math.round(s.score * 100)}")
             sb
         }
 
-    /** [rows] 를 줄바꿈으로 이은 것 (앱 화면용). */
-    fun lines(context: Context, stocks: List<Stock>, withProb: Boolean = false): CharSequence =
-        SpannableStringBuilder().apply {
-            rows(context, stocks, withProb = withProb).forEachIndexed { i, row ->
-                if (i > 0) append('\n')
-                append(row)
-            }
-        }
+    /** "엔비디아  $225.07 +0.22%" (등락률 색칠). */
+    fun quoteLine(context: Context, name: String, price: Double, change: Double): CharSequence {
+        val sb = SpannableStringBuilder("$name  ${price(price)} ")
+        val start = sb.length
+        sb.append(percent(change))
+        sb.setSpan(ForegroundColorSpan(color(context, change)), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        return sb
+    }
+
+    /** 담은 종목: 시세 줄 + "담은 뒤 +3.4% · 추천 중" */
+    fun watchedLine(context: Context, w: Watched, quote: Quote?, recommended: Boolean): CharSequence {
+        val price = quote?.price ?: Double.NaN
+        val sb = SpannableStringBuilder(quoteLine(context, w.name, price, quote?.change ?: Double.NaN))
+        sb.append("\n")
+        val since = price / w.addedPrice - 1
+        val start = sb.length
+        sb.append("담은 뒤 ${percent(since)}")
+        sb.setSpan(ForegroundColorSpan(color(context, since)), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sub(context, sb, " · ${SimpleDateFormat("MM.dd", Locale.KOREAN).format(Date(w.addedAt))} 담음 · " +
+            if (recommended) "추천 중" else "추천 종료")
+        return sb
+    }
+
+    private fun sub(context: Context, sb: SpannableStringBuilder, text: String) {
+        val start = sb.length
+        sb.append(text)
+        sb.setSpan(ForegroundColorSpan(context.getColor(R.color.sub)), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
 }
