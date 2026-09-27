@@ -52,6 +52,12 @@ object Notifier {
             context, 0, Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        // 지워지면 RepostReceiver 가 바로 다시 띄운다 (Android 14부터는 고정 알림도 밀어서 지울 수 있어서)
+        val dismissed = PendingIntent.getBroadcast(
+            context, 1,
+            Intent(context, RepostReceiver::class.java).setAction(RepostReceiver.ACTION_DISMISSED),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         val notification = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_mijang)
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
@@ -62,6 +68,8 @@ object Notifier {
             .setSilent(true)
             .setShowWhen(false)
             .setContentIntent(open)
+            .setDeleteIntent(dismissed)
+            .setOngoing(true) // 고정: 밀기·모두 지우기로 안 지워짐
             .build()
         val manager = NotificationManagerCompat.from(context)
         manager.cancel(OLD_SECOND_PAGE_ID) // 이전 버전의 11~20위 알림 정리

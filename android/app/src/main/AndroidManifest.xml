@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- 앱 안에서 새 버전 APK 설치 화면을 열기 위해 -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- 재부팅 뒤 알림 다시 띄우기 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".MijangApp"
@@ -23,6 +25,15 @@
             </intent-filter>
         </activity>
         <activity android:name=".DetailActivity" android:exported="false" />
+        <!-- 알림 삭제 → 바로 다시 띄우기 / 재부팅·업데이트 → 다시 띄우기. 부팅·업데이트는 시스템만 보낼 수 있는 방송이다. -->
+        <receiver
+            android:name=".RepostReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.updates"
