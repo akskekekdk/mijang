@@ -23,18 +23,25 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Test & build
         run: ./gradlew testDebugUnitTest assembleDebug
-      - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk mijang.apk
+      - name: Rename APK + version file
+        # 앱이 이 파일로 새 버전이 있는지 확인한다 (versionCode = 빌드 번호).
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk mijang.apk
+          printf '{"versionCode":%s,"versionName":"1.0.%s","sha":"%s"}\n' \
+            "$GITHUB_RUN_NUMBER" "$GITHUB_RUN_NUMBER" "${GITHUB_SHA::7}" > version.json
+          cat version.json
       - uses: actions/upload-artifact@v4
         with:
           name: mijang-apk
-          path: android/mijang.apk
+          path: |
+            android/mijang.apk
+            android/version.json
       - name: Publish "latest" release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest --cleanup-tag --yes || true
-          gh release create latest mijang.apk \
+          gh release create latest mijang.apk version.json \
             --title "미장 앱 (최신)" \
             --notes "빌드 #${GITHUB_RUN_NUMBER} · ${GITHUB_SHA::7}. 휴대폰에서 mijang.apk 를 받아 설치하세요." \
             --target "$GITHUB_SHA"

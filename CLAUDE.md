@@ -12,4 +12,6 @@
 - `data/universe.txt` — 후보 종목(티커 + 한글이름). 모델 학습 대상.
 - `android/` — 안드로이드 앱 "미장". `./gradlew testDebugUnitTest assembleDebug`.
   - main에 푸시하면 GitHub Actions가 APK를 빌드해 Releases의 `latest`에 올린다.
+  - 같이 올리는 `version.json`(versionCode = 빌드 번호)으로 앱이 새 버전을 확인하고 앱 안에서 업데이트한다(`Updater.kt`).
+  - 서명 키 `android/app/mijang.keystore`는 저장소에 둔다. 바꾸면 기존 설치본이 업데이트되지 않는다.
   - 아이콘은 `android/tools/make_icons.py`로 생성 (Noto Sans CJK KR Bold 필요).

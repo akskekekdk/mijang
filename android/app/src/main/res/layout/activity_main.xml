@@ -38,6 +38,8 @@
             android:text="@string/refresh" />
     </LinearLayout>
 
+    <include layout="@layout/item_update" />
+
     <TextView
         android:id="@+id/status"
         android:layout_width="match_parent"

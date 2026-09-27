@@ -4,13 +4,19 @@ import android.Manifest
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     private lateinit var status: TextView
@@ -33,6 +39,7 @@ class MainActivity : ComponentActivity() {
         }
 
         if (Build.VERSION.SDK_INT >= 33) askNotification.launch(Manifest.permission.POST_NOTIFICATIONS)
+        checkForUpdate()
 
         WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData(UpdateWorker.NOW)
             .observe(this) { infos ->
@@ -47,6 +54,39 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         render()
+    }
+
+    /** GitHub 에 더 새 버전이 있으면 맨 위에 "업데이트" 바를 보여준다. */
+    private fun checkForUpdate() {
+        lifecycleScope.launch {
+            val release = withContext(Dispatchers.IO) { runCatching { Updater.check(this@MainActivity) }.getOrNull() }
+                ?: return@launch
+            findViewById<TextView>(R.id.update_text).text = getString(R.string.update_available, release.versionName)
+            findViewById<View>(R.id.update_bar).visibility = View.VISIBLE
+            val button = findViewById<Button>(R.id.update_button)
+            button.setOnClickListener { update(button) }
+        }
+    }
+
+    private fun update(button: Button) {
+        button.isEnabled = false
+        button.text = getString(R.string.update_downloading)
+        lifecycleScope.launch {
+            val apk = withContext(Dispatchers.IO) { runCatching { Updater.download(this@MainActivity) }.getOrNull() }
+            button.isEnabled = true
+            button.text = getString(R.string.update)
+            val opened = apk != null && runCatching { Updater.install(this@MainActivity, apk) }
+                .onFailure { apkFailed() }.getOrDefault(true)
+            when {
+                apk == null -> apkFailed()
+                !opened -> Toast.makeText(this@MainActivity, R.string.update_allow, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun apkFailed() {
+        Toast.makeText(this, R.string.update_failed, Toast.LENGTH_LONG).show()
+        runCatching { Updater.openInBrowser(this) }
     }
 
     private fun render() {

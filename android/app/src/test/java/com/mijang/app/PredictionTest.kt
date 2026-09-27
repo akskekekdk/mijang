@@ -56,3 +56,13 @@ class ReportTest {
         assertTrue(r.details.values.count { it.recommended } == p.stocks.size)
     }
 }
+
+class UpdaterTest {
+    /** CI(android.yml)가 만드는 version.json 형식을 앱이 읽을 수 있는지. */
+    @Test
+    fun parsesCiVersionFile() {
+        val r = Updater.parse("""{"versionCode":12,"versionName":"1.0.12","sha":"abc1234"}""")
+        assertEquals(12L, r.versionCode)
+        assertEquals("1.0.12", r.versionName)
+    }
+}

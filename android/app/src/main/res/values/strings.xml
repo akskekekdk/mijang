@@ -9,6 +9,11 @@
     <string name="added">담음</string>
     <string name="remove">삭제</string>
     <string name="info">근거</string>
+    <string name="update">업데이트</string>
+    <string name="update_available">새 버전 %1$s이 있어요</string>
+    <string name="update_downloading">받는 중…</string>
+    <string name="update_allow">설치 허용을 켠 뒤 다시 눌러주세요</string>
+    <string name="update_failed">업데이트 실패 — 브라우저로 받을게요</string>
     <string name="info_title">어떻게 예측하나</string>
     <string name="tap_hint">종목을 누르면 추천 근거와 지표 표를 볼 수 있어요.</string>
     <string name="refresh">새로고침</string>
